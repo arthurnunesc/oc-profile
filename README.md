@@ -1,4 +1,4 @@
-# opencode-profile
+# oc-profile
 
 Switch between multiple OpenAI subscription accounts (ChatGPT Plus/Pro) in [OpenCode](https://opencode.ai).
 
@@ -8,7 +8,7 @@ OpenCode stores a single set of OAuth credentials per provider. This script lets
 
 ```bash
 # Copy somewhere on your PATH
-cp opencode-profile /usr/local/bin/
+cp oc-profile /usr/local/bin/
 ```
 
 Or just run it directly from wherever you cloned it.
@@ -18,17 +18,17 @@ Or just run it directly from wherever you cloned it.
 ```bash
 # 1. Open opencode → /connect → OpenAI → ChatGPT Plus/Pro → sign in with account A
 # 2. Save it as a profile
-opencode-profile make work --current
+oc-profile make work --current
 
 # 3. Open opencode → /connect → OpenAI → ChatGPT Plus/Pro → sign in with account B
 # 4. Save it as a profile
-opencode-profile make personal --current
+oc-profile make personal --current
 ```
 
 You now have two profiles. Switch between them anytime:
 
 ```bash
-opencode-profile switch work
+oc-profile switch work
 # restart opencode
 ```
 
