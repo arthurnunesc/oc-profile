@@ -40,6 +40,13 @@ profile_exists() {
   [[ -f "${PROFILES_DIR}/$1.json" ]]
 }
 
+profile_email() {
+  local email_file="${PROFILES_DIR}/$1.email"
+  if [[ -f "${email_file}" ]]; then
+    sed -n '1p' "${email_file}"
+  fi
+}
+
 profile_count() {
   ensure_profiles_dir
   find "${PROFILES_DIR}" -maxdepth 1 -name '*.json' -type f 2>/dev/null | wc -l | tr -d ' '
@@ -165,13 +172,33 @@ cmd_list() {
   echo -e "${BOLD}OpenAI profiles:${RESET}"
   echo ""
   for p in "${profiles[@]}"; do
+    local email
+    email="$(profile_email "${p}")"
+    if [[ -n "${email}" ]]; then
+      email=" ${DIM}<${email}>${RESET}"
+    fi
     if [[ "${p}" == "${current}" ]]; then
-      echo -e "  ${GREEN}* ${p}${RESET} ${DIM}(active)${RESET}"
+      echo -e "  ${GREEN}* ${p}${RESET}${email} ${DIM}(active)${RESET}"
     else
-      echo -e "    ${p}"
+      echo -e "    ${p}${email}"
     fi
   done
   echo ""
+}
+
+cmd_email() {
+  local name="${1:-}"
+  shift || true
+  local email="$*"
+  [[ -z "${name}" || -z "${email}" ]] && die "usage: opencode-profile email <profile> <email-or-label>"
+  validate_name "${name}"
+
+  if ! profile_exists "${name}"; then
+    die "profile '${name}' does not exist."
+  fi
+
+  printf '%s\n' "${email}" > "${PROFILES_DIR}/${name}.email"
+  success "saved email label for '${name}'."
 }
 
 cmd_delete() {
@@ -196,6 +223,7 @@ cmd_delete() {
   fi
 
   rm "${PROFILES_DIR}/${name}.json"
+  rm -f "${PROFILES_DIR}/${name}.email"
   success "deleted profile '${name}'."
 }
 
@@ -214,6 +242,9 @@ cmd_rename() {
   fi
 
   mv "${PROFILES_DIR}/${old}.json" "${PROFILES_DIR}/${new}.json"
+  if [[ -f "${PROFILES_DIR}/${old}.email" ]]; then
+    mv "${PROFILES_DIR}/${old}.email" "${PROFILES_DIR}/${new}.email"
+  fi
 
   # If the renamed profile was active, update the symlink
   local current
@@ -252,6 +283,7 @@ cmd_help() {
   echo "  make <name> [--current]    Create a profile from current auth.json (--current)"
   echo "                             or an empty placeholder (without --current)"
   echo "  switch <name>              Switch to a different profile"
+  echo "  email <name> <label>       Save an email/label shown in list"
   echo "  list                       List all profiles"
   echo "  which                      Show the active profile name"
   echo "  rename <old> <new>         Rename a profile"
@@ -280,6 +312,7 @@ shift || true
 case "${cmd}" in
   make)    cmd_make "$@" ;;
   switch)  cmd_switch "$@" ;;
+  email)   cmd_email "$@" ;;
   list|ls) cmd_list ;;
   delete|rm) cmd_delete "$@" ;;
   rename|mv) cmd_rename "$@" ;;
